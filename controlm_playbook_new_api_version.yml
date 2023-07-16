@@ -1,0 +1,47 @@
+---
+- name: Select Control-M Jobs with Wildcard Filtering
+  hosts: controlm_server
+  tasks:
+    - name: Read token definition file
+      slurp:
+        path: tokenDefinition.json
+      register: token_file
+      
+    - name: Get Access Token
+      uri:
+        url: "{{ endpoint }}/authentication/token"
+        method: POST
+        headers:
+          "Content-Type": "application/json"
+          "x-api-key": "{{ token }}"
+        body_format: json
+        body: "{{ token_file['content'] | b64decode | from_json }}"
+        validate_certs: no
+        return_content: yes
+      register: access_token
+
+    - name: Get Jobs
+      uri:
+        url: "https://hello.com/deploy/jobs"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ access_token.json.tokenValue }}"
+        body_format: json
+        body:
+          server: "*"
+          folder: "Auto*"
+          useArrayFormat: true
+        validate_certs: no
+        return_content: yes
+      register: jobs_output
+
+    - name: Filter Jobs
+      set_fact:
+        selected_jobs: "{{ jobs_output.json | json_query(query) }}"
+      vars:
+        query: "[?contains(jobName, '{{ job_name_pattern }}') || contains(otherAttribute, '{{ other_attribute_pattern }}')]"
+
+    - name: Print Jobs
+      debug:
+        var: item
+      loop: "{{ selected_jobs }}"

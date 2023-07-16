@@ -1,0 +1,22 @@
+---
+- name: Deploying WEB artifacts
+  hosts: web
+  vars_files:
+    - artifacts.yml
+  roles:
+    - role: web
+      artifact_url: "{{ artifactory_host }}{{ web.artifact_path }}/{{ web.artifact_name }}"
+      target_folder: "{{ web.target_folder }}"
+      script_path: "{{ web.script_path }}"
+      tags: ["web"]
+
+- name: Deploying DB artifacts
+  hosts: db
+  vars_files:
+    - artifacts.yml
+  roles:
+    - role: db
+      artifact_url: "{{ artifactory_host }}{{ db.artifact_path }}/{{ db.artifact_name }}"
+      target_folder: "{{ db.target_folder }}"
+      script_path: "{{ db.script_path }}"
+      tags: ["db"]
